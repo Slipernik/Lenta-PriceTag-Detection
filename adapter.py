@@ -8,10 +8,6 @@ from multiprocessing import Process, Queue
 from detection import DetectorYOLO
 
 
-# -------------------------
-# Настройки
-# -------------------------
-
 PROJECT_DIR = Path(__file__).resolve().parent
 
 video_path = PROJECT_DIR / "videos/1.mp4"
@@ -75,7 +71,6 @@ def run_lenta_single_tag_ocr(crop_path: Path, out_dir: Path):
     return result
 
 def run_lenta_sequence_tag_ocr(root_dir: Path, out_dir: Path):
-    # crop_path = Path(crop_path).resolve()
     out_dir = Path(out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -143,22 +138,17 @@ for frame_idx, img, grade_d in det.video_detection(
 ):
     if frame_idx % det.frame_skip == 0:        
         for tr_id, vals in list(grade_d.items()):
-            # print(vals)
             if len(vals) > 0:
                 frame_last = max(vals, key= lambda x: x['frame_idx'])['frame_idx']
 
             if frame_idx - frame_last >= frame_diff:
-                """
-                if len(vals) > min(0, Q_CROPS - round(Q_CROPS/2)):
-                    det.clear_track(tr_id, True)
-                    continue
-                """
-
+     
                 best = max(vals, key=lambda x: x['grade'])
                 crop_path = best['path']
                 
                 run_lenta_single_tag_ocr(crop_path, Path(crop_path).parent)                
 
                 # run_lenta_sequence_tag_ocr(Path('results'), Path(crop_path).parent.parent)
+
                 det.clear_track(tr_id)
 

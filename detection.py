@@ -1,3 +1,4 @@
+import csv
 import time
 from pathlib import Path
 from ultralytics import YOLO
@@ -23,8 +24,10 @@ class DetectorYOLO:
         iou=0.5,
         max_det=200,
         imgsz=960,
-    ):        
-        self.model = YOLO(model_path) # !!! Нужно под ONNX/Paddle/RKKN сделать !!!
+        save_tracks_csv=False,
+        tracks_csv_path="tracks.csv",
+    ):
+        self.model = YOLO(model_path)
         self.tracker = tracker
         self.frame_skip = frame_skip
         self.verbose = verbose
@@ -33,12 +36,20 @@ class DetectorYOLO:
         self.q_crops = q_crops
         self.pad = pad
         self.device = device
-
         self.conf = conf
         self.draw_conf = draw_conf
         self.iou = iou
         self.max_det = max_det
         self.imgsz = imgsz
+
+        self.save_tracks_csv = save_tracks_csv
+        self.tracks_csv_path = Path(tracks_csv_path) if tracks_csv_path else None
+
+        if self.save_tracks_csv and self.tracks_csv_path is not None:
+            self.tracks_csv_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.tracks_csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["frame_idx", "tr_id", "x1", "y1", "x2", "y2"])
 
         self.grade_d = {}
         self.save_dir = self._init_save_dir(save_root_dir)
@@ -74,6 +85,8 @@ class DetectorYOLO:
         ids = boxes.id.detach().cpu().numpy().astype(np.int32)
 
         for xyxy, conf, bcls, tr_id in zip(xyxys, confs, clss, ids):
+            self.save_track_to_csv(frame_idx, tr_id, xyxy)
+            
             crop = self.get_crop_np(img, xyxy)
             grade = self.calc_grade(crop, img.shape, conf)
 
@@ -145,9 +158,11 @@ class DetectorYOLO:
 
         out = None
         if video_save:
+            video_save_path = Path('saved_video')
+            video_save_path.mkdir(parents=True, exist_ok=True)
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
             out = cv2.VideoWriter(
-                f"{Path(video_path).stem}.mp4",
+                video_save_path / f"{Path(video_path).stem}.mp4",
                 fourcc,
                 fps,
                 out_size,
@@ -190,8 +205,7 @@ class DetectorYOLO:
                         break
 
                 if video_save and out is not None:
-                    video_save_path = Path('saved_video').mkdir(parents=True, exist_ok=True)
-                    out.write(video_save_path / img)
+                    out.write(img)
 
                 frame_idx += 1
 
@@ -233,7 +247,6 @@ class DetectorYOLO:
 
 
 
-        
     # --------------------------------------
     # ------- Отрисовка и сохранение -------
     # --------------------------------------
@@ -348,6 +361,23 @@ class DetectorYOLO:
 
         return img_path
     
+    def save_track_to_csv(self, frame_idx, tr_id, xyxy):
+        if not self.save_tracks_csv or self.tracks_csv_path is None:
+            return
+
+        x1, y1, x2, y2 = xyxy # self._xyxy_to_np(xyxy).astype(float)
+
+        with open(self.tracks_csv_path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                int(frame_idx),
+                int(tr_id),
+                float(x1),
+                float(y1),
+                float(x2),
+                float(y2),
+            ])
+
     def update_best_crops(self, crop, xyxy, grade, frame_idx, tr_id):
         
         tr_id = int(tr_id)

@@ -1,21 +1,14 @@
-# Core ML / CV
-ultralytics>=8.3.0,<9.0.0
-torch>=2.3.0,<3.0.0
-torchvision>=0.18.0,<1.0.0
-opencv-python>=4.9.0,<5.0.0
-numpy>=1.26.0,<2.0.0
-matplotlib>=3.8.0,<4.0.0
-
-# Augmentations / configs
-albumentations>=1.4.0,<2.0.0
-PyYAML>=6.0.1,<7.0.0
-scipy>=1.11.0,<2.0.0
-
-# YOLO tracking, useful for ByteTrack
-lap>=0.5.12,<1.0.0
-
-# Notebooks
-jupyter>=1.0.0,<2.0.0
-ipykernel>=6.29.0,<7.0.0
-ipywidgets>=8.1.0,<9.0.0
-tqdm>=4.66.0,<5.0.0
+streamlit>=1.36
+streamlit-webrtc>=0.47
+av>=12.0
+gdown>=5.2
+opencv-python>=4.8
+numpy>=1.24
+pandas>=2.0
+pillow>=10.0
+matplotlib>=3.7
+ultralytics>=8.3
+torch>=2.0
+albumentations>=1.4
+scipy>=1.10
+pyyaml>=6.0
